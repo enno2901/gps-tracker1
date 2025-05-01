@@ -3,21 +3,11 @@ let totalDistance = 0;
 let totalPoints = 0;
 let username = localStorage.getItem("username");
 
-// Firebase SDKs via CDN (Skypack)
-import { initializeApp } from "https://cdn.skypack.dev/firebase/app";
-import {
-  getFirestore,
-  collection,
-  doc,
-  setDoc,
-  getDocs,
-  query,
-  orderBy,
-  limit,
-  serverTimestamp
-} from "https://cdn.skypack.dev/firebase/firestore";
+// Firebase SDK importieren (falls nicht bereits erledigt)
+import { initializeApp } from "firebase/app";
+import { getFirestore, collection, doc, setDoc, getDocs, query, orderBy, limit, serverTimestamp } from "firebase/firestore";
 
-// Firebase-Konfiguration
+// Deine Firebase Konfiguration
 const firebaseConfig = {
   apiKey: "AIzaSyAYIA6Z6IQzikee8yyfOQGHIJ9lmBu5sa8",
   authDomain: "gps-tracker-4d035.firebaseapp.com",
@@ -28,11 +18,11 @@ const firebaseConfig = {
   measurementId: "G-8LY8TK9BHR"
 };
 
-// Firebase initialisieren
+// Firebase-App initialisieren
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Benutzername laden oder setzen
+// Benutzername prüfen und ggf. setzen
 window.addEventListener("load", () => {
   if (!username) {
     const usernameInput = document.getElementById("usernameInput");
@@ -59,20 +49,21 @@ window.addEventListener("load", () => {
   fetchTopScores();
 });
 
-// Beim Verlassen speichern
+// Punkte beim Verlassen der Seite speichern
 window.addEventListener("beforeunload", () => {
   if (username) saveToFirebase(username, totalPoints);
 });
 
-// Tracking starten
 document.getElementById("startBtn").addEventListener("click", () => {
+  console.log("Tracking gestartet.");
+
   if (!navigator.geolocation) {
     alert("Geolocation wird nicht unterstützt.");
     return;
   }
 
   navigator.geolocation.getCurrentPosition(
-    () => {
+    pos => {
       document.body.insertAdjacentHTML("beforeend", "<p>📍 GPS aktiviert</p>");
       startTracking();
     },
@@ -87,7 +78,6 @@ document.getElementById("startBtn").addEventListener("click", () => {
   );
 });
 
-// GPS-Tracking-Funktion
 function startTracking() {
   navigator.geolocation.watchPosition(position => {
     const { latitude, longitude } = position.coords;
@@ -112,7 +102,6 @@ function startTracking() {
   });
 }
 
-// Tabelle aktualisieren
 function addPointsRow(distance) {
   const table = document.getElementById("pointsTable");
   const row = table.insertRow();
@@ -129,39 +118,47 @@ function addPointsRow(distance) {
   distCell.textContent = distance.toFixed(1);
   pointsCell.textContent = points;
 
+  // Firebase mit den neuen Punkten aktualisieren
+  saveToFirebase(username, totalPoints);  // Punkte in Firebase speichern
+
+  // Die angezeigten Werte aktualisieren
   document.getElementById("total_Count").textContent = totalDistance.toFixed(2) + " m";
   document.getElementById("total_Points").textContent = totalPoints;
 }
 
-// Daten in Firestore speichern
 function saveToFirebase(username, points) {
   const userRef = doc(db, "highScores", username);
+
+  // Punkte und Timestamp speichern
   setDoc(userRef, {
     points: points,
-    timestamp: serverTimestamp(),
-  }).then(() => {
-    console.log("Gesamtpunktzahl gespeichert.");
-    fetchTopScores();
-  }).catch(error => {
-    console.error("Fehler beim Speichern:", error);
-  });
+    timestamp: serverTimestamp(), // Automatisch den aktuellen Zeitpunkt speichern
+  }, { merge: true }) // merge: true sorgt dafür, dass nur die Punkte und der Timestamp aktualisiert werden, ohne andere Daten zu überschreiben
+    .then(() => {
+      console.log("Gesamtpunktzahl gespeichert.");
+      fetchTopScores();  // Bestenliste nach dem Speichern neu laden
+    })
+    .catch(error => {
+      console.error("Fehler beim Speichern:", error);
+    });
 }
 
-// Bestenliste abrufen
 function fetchTopScores() {
   const table = document.getElementById("leaderboardTable");
   if (!table) return;
-  table.innerHTML = '';
+  table.innerHTML = ''; // Vorherige Liste leeren
 
+  // Firestore-Abfrage: Die besten 10 Spieler nach Punkten, absteigend sortiert
   const q = query(collection(db, "highScores"), orderBy("points", "desc"), limit(10));
 
+  // Abfrage ausführen und Ergebnisse in die Tabelle einfügen
   getDocs(q)
     .then(snapshot => {
       snapshot.forEach(doc => {
         const data = doc.data();
         const row = table.insertRow();
-        row.insertCell(0).textContent = doc.id;
-        row.insertCell(1).textContent = data.points;
+        row.insertCell(0).textContent = doc.id; // Der Benutzername (ID des Dokuments)
+        row.insertCell(1).textContent = data.points; // Die Punkte des Spielers
       });
     })
     .catch(err => {
@@ -169,7 +166,6 @@ function fetchTopScores() {
     });
 }
 
-// Hilfsfunktionen
 function toRadians(degrees) {
   return degrees * Math.PI / 180;
 }
@@ -186,5 +182,5 @@ function calculateDistance(pos1, pos2) {
             Math.sin(Δλ / 2) ** 2;
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
-  return R * c;
+  return R * c; // Entfernung in Metern
 }
