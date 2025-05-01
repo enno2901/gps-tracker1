@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GPS Punkte Tracker</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <h1>GPS Punkte Tracker</h1>
+ 
+<h2>Insgesamte Distanz: <span id="total_Count"></span></h2>
+<h2>Insgesamte Punkte: <span id="total_Points"></span></h2>
+
+  <button id="startBtn">Tracking starten</button>
+  <table>
+    <thead>
+      <tr>
+        <th>Zeit</th>
+        <th>Distanz (m)</th>
+        <th>Punkte</th>
+      </tr>
+    </thead>
+    <tbody id="pointsTable"></tbody>
+  </table>
+
+  <script src="script.js"></script>
+</body>
+</html>
