@@ -6,30 +6,8 @@
   <title>GPS Punkte Tracker</title>
   <link rel="stylesheet" href="style.css" />
 
-  <!-- Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
-
-  <script type="module">
-    // Firebase-Initialisierung
-    const firebaseConfig = {
-      apiKey: "AIzaSyAYIA6Z6IQzikee8yyfOQGHIJ9lmBu5sa8",
-      authDomain: "gps-tracker-4d035.firebaseapp.com",
-      projectId: "gps-tracker-4d035",
-      storageBucket: "gps-tracker-4d035.firebasestorage.app",
-      messagingSenderId: "352979419131",
-      appId: "1:352979419131:web:919031e09134ab2f13955e",
-      measurementId: "G-8LY8TK9BHR"
-    };
-
-    // Firebase App initialisieren
-    const app = firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-
-    // Optional: Analytics für Firebase (Falls benötigt)
-    // const analytics = firebase.analytics();
-  </script>
-  
+  <!-- script.js als Modul einbinden -->
+  <script type="module" src="script.js"></script>
 </head>
 <body>
   <h1>GPS Punkte Tracker</h1>
@@ -37,11 +15,8 @@
   <h2>Insgesamte Distanz: <span id="total_Count"></span></h2>
   <h2>Insgesamte Punkte: <span id="total_Points"></span></h2>
 
-
   <label for="usernameInput">Dein Name:</label>
   <input type="text" id="usernameInput" placeholder="Spielername eingeben" />
-  
-
 
   <button id="startBtn">Tracking starten</button>
   
@@ -53,8 +28,6 @@
     <tbody id="leaderboardTable"></tbody>
   </table>
   
-
-  
   <table>
     <thead>
       <tr>
@@ -65,7 +38,5 @@
     </thead>
     <tbody id="pointsTable"></tbody>
   </table>
-
-  <script src="script.js"></script>
 </body>
 </html>
