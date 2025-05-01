@@ -1,30 +1,46 @@
+// Importiere Firebase SDK als Modul
+import { initializeApp } from "firebase/app";
+import { getFirestore, doc, setDoc, collection, getDocs, query, orderBy, limit, serverTimestamp } from "firebase/firestore";
+
+// Firebase-Konfiguration
+const firebaseConfig = {
+  apiKey: "AIzaSyAYIA6Z6IQzikee8yyfOQGHIJ9lmBu5sa8",
+  authDomain: "gps-tracker-4d035.firebaseapp.com",
+  projectId: "gps-tracker-4d035",
+  storageBucket: "gps-tracker-4d035.appspot.com",
+  messagingSenderId: "352979419131",
+  appId: "1:352979419131:web:919031e09134ab2f13955e",
+  measurementId: "G-8LY8TK9BHR"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// Globale Variablen
 let lastPosition = null;
 let totalDistance = 0;
 let totalPoints = 0;
 let username = localStorage.getItem("username");
 
+// Nach dem Laden der Seite
 window.addEventListener("load", () => {
-  if (!username) {
-    const usernameInput = document.getElementById("usernameInput");
-    username = usernameInput ? usernameInput.value.trim() : "";
-    if (username) {
+  document.getElementById("startBtn").addEventListener("click", startTracking);
+
+  const usernameInput = document.getElementById("usernameInput");
+  if (usernameInput) {
+    usernameInput.addEventListener("change", () => {
+      username = usernameInput.value.trim();
       localStorage.setItem("username", username);
-      saveToFirebase(username, totalPoints);
-    } else {
-      alert("Bitte gib deinen Namen ein.");
-    }
+    });
   }
 
   const savedDistance = localStorage.getItem("totalDistance");
   const savedPoints = localStorage.getItem("totalPoints");
 
-  if (savedDistance) {
-    totalDistance = parseFloat(savedDistance);
-    totalPoints = parseInt(savedPoints);
-    document.getElementById("total_Count").textContent = totalDistance.toFixed(2) + " m";
-    document.getElementById("total_Points").textContent = totalPoints;
-  }
+  if (savedDistance) totalDistance = parseFloat(savedDistance);
+  if (savedPoints) totalPoints = parseInt(savedPoints);
 
+  updateTotals();
   fetchTopScores();
 });
 
@@ -32,81 +48,45 @@ window.addEventListener("beforeunload", () => {
   if (username) saveToFirebase(username, totalPoints);
 });
 
-document.getElementById("startBtn").addEventListener("click", () => {
+function startTracking() {
   if (!navigator.geolocation) {
     alert("Geolocation wird nicht unterstützt.");
     return;
   }
 
-  navigator.geolocation.getCurrentPosition(() => startTracking(), err => {
-    alert("GPS-Zugriff fehlgeschlagen: " + err.message);
-  }, { enableHighAccuracy: true, timeout: 10000 });
-});
-
-function startTracking() {
   navigator.geolocation.watchPosition(position => {
     const { latitude, longitude } = position.coords;
     const current = { latitude, longitude };
 
+    console.log("Neue Position:", current);
+
     if (lastPosition) {
       const distance = calculateDistance(lastPosition, current);
+      console.log("Berechnete Distanz:", distance.toFixed(2));
+
       if (distance > 2.8 && distance < 10) {
         totalDistance += distance;
+        const points = Math.round(distance);
+        totalPoints += points;
+
         localStorage.setItem("totalDistance", totalDistance);
-        addPointsRow(distance);
-        saveToFirebase(username, totalPoints);
+        localStorage.setItem("totalPoints", totalPoints);
+
+        addPointsRow(distance, points);
+        updateTotals();
+        if (username) saveToFirebase(username, totalPoints);
       }
     }
+
     lastPosition = current;
-  }, null, { enableHighAccuracy: true });
-}
-
-function addPointsRow(distance) {
-  const table = document.getElementById("pointsTable");
-  const row = table.insertRow();
-  const timeCell = row.insertCell(0);
-  const distCell = row.insertCell(1);
-  const pointsCell = row.insertCell(2);
-
-  const points = Math.round(distance);
-  const now = new Date();
-  totalPoints += points;
-  localStorage.setItem("totalPoints", totalPoints);
-
-  timeCell.textContent = now.toLocaleTimeString();
-  distCell.textContent = distance.toFixed(1);
-  pointsCell.textContent = points;
-
-  document.getElementById("total_Count").textContent = totalDistance.toFixed(2) + " m";
-  document.getElementById("total_Points").textContent = totalPoints;
-}
-
-function saveToFirebase(username, points) {
-  const db = firebase.firestore();
-  db.collection("highScores").doc(username).set({
-    points: points,
-    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-  }).then(fetchTopScores).catch(console.error);
-}
-
-function fetchTopScores() {
-  const db = firebase.firestore();
-  const table = document.getElementById("leaderboardTable");
-  table.innerHTML = '';
-
-  db.collection("highScores").orderBy("points", "desc").limit(10).get()
-    .then(snapshot => {
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        const row = table.insertRow();
-        row.insertCell(0).textContent = doc.id;
-        row.insertCell(1).textContent = data.points;
-      });
-    }).catch(console.error);
-}
-
-function toRadians(deg) {
-  return deg * Math.PI / 180;
+  }, error => {
+    console.error("Geolocation Fehler:", error.message);
+    alert("GPS Fehler: " + error.message);
+  }, {
+    enableHighAccuracy: true,
+    maximumAge: 10000,
+    timeout: 10000
+  });
 }
 
 function calculateDistance(pos1, pos2) {
@@ -122,4 +102,55 @@ function calculateDistance(pos1, pos2) {
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
   return R * c;
+}
+
+function toRadians(deg) {
+  return deg * (Math.PI / 180);
+}
+
+function addPointsRow(distance, points) {
+  const table = document.getElementById("pointsTable");
+  const row = table.insertRow();
+  const timeCell = row.insertCell(0);
+  const distCell = row.insertCell(1);
+  const pointsCell = row.insertCell(2);
+
+  timeCell.textContent = new Date().toLocaleTimeString();
+  distCell.textContent = distance.toFixed(1);
+  pointsCell.textContent = points;
+}
+
+function updateTotals() {
+  document.getElementById("total_Count").textContent = totalDistance.toFixed(2) + " m";
+  document.getElementById("total_Points").textContent = totalPoints;
+}
+
+function saveToFirebase(username, points) {
+  const ref = doc(db, "highScores", username);
+  setDoc(ref, {
+    points: points,
+    timestamp: serverTimestamp()
+  }).then(() => {
+    console.log("Punkte gespeichert.");
+    fetchTopScores();
+  }).catch(err => {
+    console.error("Fehler beim Speichern:", err);
+  });
+}
+
+function fetchTopScores() {
+  const table = document.getElementById("leaderboardTable");
+  table.innerHTML = "";
+
+  const q = query(collection(db, "highScores"), orderBy("points", "desc"), limit(10));
+
+  getDocs(q).then(snapshot => {
+    snapshot.forEach(doc => {
+      const row = table.insertRow();
+      row.insertCell(0).textContent = doc.id;
+      row.insertCell(1).textContent = doc.data().points;
+    });
+  }).catch(err => {
+    console.error("Fehler beim Laden der Bestenliste:", err);
+  });
 }
