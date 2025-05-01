@@ -120,7 +120,11 @@ function addPointsRow(distance) {
 
   document.getElementById("total_Count").textContent = totalDistance.toFixed(2) + " m";
   document.getElementById("total_Points").textContent = totalPoints;
+
+  // 🔥 Punkte direkt nach jedem Schritt speichern
+  saveToFirebase(username, totalPoints);
 }
+
 
 function saveToFirebase(username, points) {
   const userRef = doc(db, "highScores", username);
