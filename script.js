@@ -3,7 +3,11 @@ let totalDistance = 0;
 let totalPoints = 0;
 let username = localStorage.getItem("username");
 
-// Firebase-Konfiguration
+// Firebase SDK importieren (falls nicht bereits erledigt)
+import { initializeApp } from "firebase/app";
+import { getFirestore, collection, doc, setDoc, getDocs, query, orderBy, limit, serverTimestamp } from "firebase/firestore";
+
+// Deine Firebase Konfiguration
 const firebaseConfig = {
   apiKey: "AIzaSyAYIA6Z6IQzikee8yyfOQGHIJ9lmBu5sa8",
   authDomain: "gps-tracker-4d035.firebaseapp.com",
@@ -14,8 +18,9 @@ const firebaseConfig = {
   measurementId: "G-8LY8TK9BHR"
 };
 
-const app = firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore(app);
+// Firebase-App initialisieren
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
 // Benutzername prüfen und ggf. setzen
 window.addEventListener("load", () => {
@@ -118,9 +123,10 @@ function addPointsRow(distance) {
 }
 
 function saveToFirebase(username, points) {
-  db.collection("highScores").doc(username).set({
+  const userRef = doc(db, "highScores", username);
+  setDoc(userRef, {
     points: points,
-    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+    timestamp: serverTimestamp(),
   }).then(() => {
     console.log("Gesamtpunktzahl gespeichert.");
     fetchTopScores();
@@ -134,10 +140,9 @@ function fetchTopScores() {
   if (!table) return;
   table.innerHTML = '';
 
-  db.collection("highScores")
-    .orderBy("points", "desc")
-    .limit(10)
-    .get()
+  const q = query(collection(db, "highScores"), orderBy("points", "desc"), limit(10));
+
+  getDocs(q)
     .then(snapshot => {
       snapshot.forEach(doc => {
         const data = doc.data();
@@ -156,7 +161,7 @@ function toRadians(degrees) {
 }
 
 function calculateDistance(pos1, pos2) {
-  const R = 6371e3;
+  const R = 6371e3; // Erdradius in Metern
   const φ1 = toRadians(pos1.latitude);
   const φ2 = toRadians(pos2.latitude);
   const Δφ = toRadians(pos2.latitude - pos1.latitude);
@@ -167,5 +172,5 @@ function calculateDistance(pos1, pos2) {
             Math.sin(Δλ / 2) ** 2;
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
-  return R * c;
+  return R * c; // Entfernung in Metern
 }
