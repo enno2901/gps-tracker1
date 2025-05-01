@@ -3,7 +3,7 @@ let totalDistance = 0;
 let totalPoints = 0;
 let username = localStorage.getItem("username");
 
-// Firebase SDK importieren (falls nicht bereits erledigt)
+// Firebase SDK importieren
 import { initializeApp } from "firebase/app";
 import { getFirestore, collection, doc, setDoc, getDocs, query, orderBy, limit, serverTimestamp } from "firebase/firestore";
 
@@ -83,12 +83,17 @@ function startTracking() {
     const { latitude, longitude } = position.coords;
     const current = { latitude, longitude };
 
+    console.log("Aktuelle Position:", current);
+
     if (lastPosition) {
       const distance = calculateDistance(lastPosition, current);
+      console.log("Berechnete Distanz:", distance);
+
       if (distance > 2.8 && distance < 10) {
         totalDistance += distance;
         localStorage.setItem("totalDistance", totalDistance);
         addPointsRow(distance);
+        saveToFirebase(username, totalPoints); // Punkte nach jeder Änderung speichern
       }
     }
 
@@ -118,47 +123,42 @@ function addPointsRow(distance) {
   distCell.textContent = distance.toFixed(1);
   pointsCell.textContent = points;
 
-  // Firebase mit den neuen Punkten aktualisieren
-  saveToFirebase(username, totalPoints);  // Punkte in Firebase speichern
-
-  // Die angezeigten Werte aktualisieren
   document.getElementById("total_Count").textContent = totalDistance.toFixed(2) + " m";
   document.getElementById("total_Points").textContent = totalPoints;
 }
 
 function saveToFirebase(username, points) {
-  const userRef = doc(db, "highScores", username);
+  if (!username) {
+    console.error("Fehler: Kein Benutzername gesetzt.");
+    return;
+  }
 
-  // Punkte und Timestamp speichern
+  const userRef = doc(db, "highScores", username);
   setDoc(userRef, {
     points: points,
-    timestamp: serverTimestamp(), // Automatisch den aktuellen Zeitpunkt speichern
-  }, { merge: true }) // merge: true sorgt dafür, dass nur die Punkte und der Timestamp aktualisiert werden, ohne andere Daten zu überschreiben
-    .then(() => {
-      console.log("Gesamtpunktzahl gespeichert.");
-      fetchTopScores();  // Bestenliste nach dem Speichern neu laden
-    })
-    .catch(error => {
-      console.error("Fehler beim Speichern:", error);
-    });
+    timestamp: serverTimestamp(),
+  }).then(() => {
+    console.log("Punkte erfolgreich gespeichert.");
+    fetchTopScores(); // Bestenliste nach jedem Speichern aktualisieren
+  }).catch(error => {
+    console.error("Fehler beim Speichern in Firebase:", error);
+  });
 }
 
 function fetchTopScores() {
   const table = document.getElementById("leaderboardTable");
   if (!table) return;
-  table.innerHTML = ''; // Vorherige Liste leeren
+  table.innerHTML = '';
 
-  // Firestore-Abfrage: Die besten 10 Spieler nach Punkten, absteigend sortiert
   const q = query(collection(db, "highScores"), orderBy("points", "desc"), limit(10));
 
-  // Abfrage ausführen und Ergebnisse in die Tabelle einfügen
   getDocs(q)
     .then(snapshot => {
       snapshot.forEach(doc => {
         const data = doc.data();
         const row = table.insertRow();
-        row.insertCell(0).textContent = doc.id; // Der Benutzername (ID des Dokuments)
-        row.insertCell(1).textContent = data.points; // Die Punkte des Spielers
+        row.insertCell(0).textContent = doc.id;
+        row.insertCell(1).textContent = data.points;
       });
     })
     .catch(err => {
