@@ -3,11 +3,21 @@ let totalDistance = 0;
 let totalPoints = 0;
 let username = localStorage.getItem("username");
 
-// Firebase SDK importieren (falls nicht bereits erledigt)
-import { initializeApp } from "firebase/app";
-import { getFirestore, collection, doc, setDoc, getDocs, query, orderBy, limit, serverTimestamp } from "firebase/firestore";
+// Firebase SDKs via CDN (Skypack)
+import { initializeApp } from "https://cdn.skypack.dev/firebase/app";
+import {
+  getFirestore,
+  collection,
+  doc,
+  setDoc,
+  getDocs,
+  query,
+  orderBy,
+  limit,
+  serverTimestamp
+} from "https://cdn.skypack.dev/firebase/firestore";
 
-// Deine Firebase Konfiguration
+// Firebase-Konfiguration
 const firebaseConfig = {
   apiKey: "AIzaSyAYIA6Z6IQzikee8yyfOQGHIJ9lmBu5sa8",
   authDomain: "gps-tracker-4d035.firebaseapp.com",
@@ -18,11 +28,11 @@ const firebaseConfig = {
   measurementId: "G-8LY8TK9BHR"
 };
 
-// Firebase-App initialisieren
+// Firebase initialisieren
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Benutzername prüfen und ggf. setzen
+// Benutzername laden oder setzen
 window.addEventListener("load", () => {
   if (!username) {
     const usernameInput = document.getElementById("usernameInput");
@@ -49,21 +59,20 @@ window.addEventListener("load", () => {
   fetchTopScores();
 });
 
-// Punkte beim Verlassen der Seite speichern
+// Beim Verlassen speichern
 window.addEventListener("beforeunload", () => {
   if (username) saveToFirebase(username, totalPoints);
 });
 
+// Tracking starten
 document.getElementById("startBtn").addEventListener("click", () => {
-  console.log("Tracking gestartet.");
-
   if (!navigator.geolocation) {
     alert("Geolocation wird nicht unterstützt.");
     return;
   }
 
   navigator.geolocation.getCurrentPosition(
-    pos => {
+    () => {
       document.body.insertAdjacentHTML("beforeend", "<p>📍 GPS aktiviert</p>");
       startTracking();
     },
@@ -78,6 +87,7 @@ document.getElementById("startBtn").addEventListener("click", () => {
   );
 });
 
+// GPS-Tracking-Funktion
 function startTracking() {
   navigator.geolocation.watchPosition(position => {
     const { latitude, longitude } = position.coords;
@@ -102,6 +112,7 @@ function startTracking() {
   });
 }
 
+// Tabelle aktualisieren
 function addPointsRow(distance) {
   const table = document.getElementById("pointsTable");
   const row = table.insertRow();
@@ -120,12 +131,9 @@ function addPointsRow(distance) {
 
   document.getElementById("total_Count").textContent = totalDistance.toFixed(2) + " m";
   document.getElementById("total_Points").textContent = totalPoints;
-
-  // 🔥 Punkte direkt nach jedem Schritt speichern
-  saveToFirebase(username, totalPoints);
 }
 
-
+// Daten in Firestore speichern
 function saveToFirebase(username, points) {
   const userRef = doc(db, "highScores", username);
   setDoc(userRef, {
@@ -139,6 +147,7 @@ function saveToFirebase(username, points) {
   });
 }
 
+// Bestenliste abrufen
 function fetchTopScores() {
   const table = document.getElementById("leaderboardTable");
   if (!table) return;
@@ -160,6 +169,7 @@ function fetchTopScores() {
     });
 }
 
+// Hilfsfunktionen
 function toRadians(degrees) {
   return degrees * Math.PI / 180;
 }
@@ -176,5 +186,5 @@ function calculateDistance(pos1, pos2) {
             Math.sin(Δλ / 2) ** 2;
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
-  return R * c; // Entfernung in Metern
+  return R * c;
 }
