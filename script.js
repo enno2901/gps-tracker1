@@ -1,8 +1,17 @@
-// Importiere Firebase SDK als Modul
-import { initializeApp } from "firebase/app";
-import { getFirestore, doc, setDoc, collection, getDocs, query, orderBy, limit, serverTimestamp } from "firebase/firestore";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import {
+  getFirestore,
+  doc,
+  setDoc,
+  collection,
+  getDocs,
+  query,
+  orderBy,
+  limit,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-// Firebase-Konfiguration
+
 const firebaseConfig = {
   apiKey: "AIzaSyAYIA6Z6IQzikee8yyfOQGHIJ9lmBu5sa8",
   authDomain: "gps-tracker-4d035.firebaseapp.com",
