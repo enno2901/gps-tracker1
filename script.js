@@ -21,6 +21,7 @@ let lastPosition = null;
 let totalDistance = 0;
 let totalPoints = 0;
 let username = localStorage.getItem("username");
+let map, marker;
 
 // Nach dem Laden der Seite
 window.addEventListener("load", () => {
@@ -57,6 +58,21 @@ function startTracking() {
   navigator.geolocation.watchPosition(position => {
     const { latitude, longitude } = position.coords;
     const current = { latitude, longitude };
+
+    if (!map) {
+    map = L.map('map').setView([latitude, longitude], 16);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap',
+    }).addTo(map);
+
+    marker = L.marker([latitude, longitude]).addTo(map)
+      .bindPopup('Du bist hier')
+      .openPopup();
+  } else {
+    // 💡 Update Marker-Position
+    marker.setLatLng([latitude, longitude]);
+    map.setView([latitude, longitude]);
+  }
 
     console.log("Neue Position:", current);
 
