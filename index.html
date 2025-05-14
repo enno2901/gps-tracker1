@@ -4,8 +4,22 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>GPS Punkte Tracker</title>
-  <link rel="stylesheet" href="style.css" />
   
+  <link rel="stylesheet" href="style.css" />
+
+  <link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  integrity="sha256-o9N1j8MK1zQ+MsaUytlJxZCkWwLC/jXp1xP1lf2N0kM="
+  crossorigin=""
+/>
+  
+<script
+  src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-o9N1j8MK1zQ+MsaUytlJxZCkWwLC/jXp1xP1lf2N0kM="
+  crossorigin=""
+></script>
+
   <!-- Modul-JavaScript laden -->
   <script type="module" src="script.js"></script>
 </head>
@@ -19,6 +33,8 @@
   <input type="text" id="usernameInput" placeholder="Spielername eingeben" />
 
   <button id="startBtn">Tracking starten</button>
+
+  <div id="map" style="height: 400px; margin: 20px 0;"></div>
   
   <h2>🏆 Bestenliste</h2>
   <table>
