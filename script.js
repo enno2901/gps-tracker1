@@ -25,14 +25,12 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Globale Variablen
 let lastPosition = null;
 let totalDistance = 0;
 let totalPoints = 0;
 let username = localStorage.getItem("username");
 let map, marker;
 
-// Nach dem Laden der Seite
 window.addEventListener("load", () => {
   document.getElementById("startBtn").addEventListener("click", startTracking);
 
@@ -78,7 +76,6 @@ function startTracking() {
       .bindPopup('Du bist hier')
       .openPopup();
   } else {
-    // 💡 Update Marker-Position
     marker.setLatLng([latitude, longitude]);
     map.setView([latitude, longitude]);
   }
